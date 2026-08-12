@@ -17,7 +17,19 @@ Checkout the library [apollo-mock-http](https://www.npmjs.com/package/apollo-moc
 yarn add apollo-mock-http -D
 ```
 
-If you want a quick hands-on with the project, you can checkout this **[example usage in CodeSandbox](https://codesandbox.io/s/apollo-mock-http-example-7nwheq)**
+For a quick hands-on, there is a runnable **[example app](./example)** in this
+repository — a small Vite + React client that queries the free
+[countries API](https://countries.trevorblades.com/) and lets you swap
+individual operations for mock data, mock errors, or localStorage data:
+
+```bash
+cd example
+yarn install
+yarn dev
+```
+
+It is covered by CI on every pull request, so it stays in step with the library.
+There is also an older **[example in CodeSandbox](https://codesandbox.io/s/apollo-mock-http-example-7nwheq)**.
 
 ```javascript
 import { injectMock } from 'apollo-mock-http';

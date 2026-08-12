@@ -35,3 +35,9 @@ jobs:
         env:
           # Built-in, automatically-scoped token only. No PAT, no secrets.
           DANGER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Danger runs the dangerfile through Babel when it finds it installed,
+          # and its transpiler calls loadOptions synchronously — removed in
+          # Babel 8, which arrived with a dependency bump. dangerfile.js is
+          # plain CommonJS with no import/export, so there is nothing to
+          # transpile and the whole step can be skipped.
+          DANGER_DISABLE_TRANSPILATION: "true"
