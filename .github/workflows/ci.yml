@@ -49,3 +49,32 @@ jobs:
           name: coverage
           path: coverage
           if-no-files-found: ignore
+
+  # Builds the example against the published package so it cannot silently rot.
+  # Same no-secrets, --ignore-scripts posture as the job above.
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: example/yarn.lock
+
+      - name: Install dependencies
+        working-directory: example
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      # Offline: mocked operations short-circuit before the HTTP link, so this
+      # does not depend on the public countries API being reachable.
+      - name: Smoke test the mock paths
+        working-directory: example
+        run: yarn smoke
+
+      - name: Build
+        working-directory: example
+        run: yarn build
