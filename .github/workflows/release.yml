@@ -1,13 +1,19 @@
 # Release: publish to npm via semantic-release, on push to main only.
 #
-# SECURITY: This is the ONLY workflow that holds NPM_TOKEN. It triggers on
-# `push` to `main`, which fires after a PR is merged — i.e. on trusted code that
-# already passed review and CI. PR code never runs here, so a malicious PR can
-# never reach the publish token (this closes the poisoned-pipeline-execution
-# hole from the old CircleCI config, where the PR build job ran with secrets).
+# SECURITY: There is no long-lived npm credential anywhere in this repository.
+# Publishing uses npm trusted publishing: the job requests a short-lived OIDC
+# token from GitHub describing itself (repo, workflow, ref), and npm exchanges
+# it for a credential valid for minutes. npm verifies the request came from this
+# repository and this workflow file, which a stolen string cannot forge.
 #
-# Packages are published with npm provenance (id-token: write) so consumers can
-# verify the build came from this repo + workflow.
+# This closes the poisoned-pipeline-execution hole from the old CircleCI config,
+# where the PR build job ran untrusted code with NPM_TOKEN in its environment.
+# There is now no token to steal, and this workflow triggers only on `push` to
+# `main` — post-merge, reviewed code. PR code never runs here.
+#
+# NOTE: the workflow FILENAME is part of the trusted publisher identity
+# registered on npm. Renaming this file breaks publishing until the npm-side
+# configuration is updated to match.
 name: Release
 
 on:
@@ -18,7 +24,7 @@ permissions:
   contents: write       # create git tags + GitHub releases
   issues: write         # semantic-release comments on released issues
   pull-requests: write  # semantic-release comments on released PRs
-  id-token: write       # npm provenance (OIDC)
+  id-token: write       # mint the OIDC token npm exchanges for publish rights
 
 concurrency:
   group: release-${{ github.ref }}
@@ -52,11 +58,8 @@ jobs:
       - name: Semantic Release
         run: npx semantic-release
         env:
+          # No NPM_TOKEN. @semantic-release/npm establishes an OIDC context
+          # first and only falls back to a token if that fails, so publishing
+          # here relies entirely on the trusted publisher configured on npm.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # The env var name is fixed: @semantic-release/npm reads NPM_TOKEN
-          # directly off the environment. The repository secret behind it is
-          # named for what it actually is — a publish-only token scoped to this
-          # one package — so it is obvious at a glance what leaking it would
-          # cost. Renaming the secret is safe; renaming the env var is not.
-          NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
