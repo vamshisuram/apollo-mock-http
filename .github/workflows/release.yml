@@ -31,7 +31,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0          # semantic-release needs full history + tags
-          persist-credentials: false
+          # Credentials ARE persisted here, unlike the PR workflows: the
+          # @semantic-release/git plugin pushes the release commit (package.json
+          # + CHANGELOG.md) and tag back to main over git, which needs an
+          # authenticated remote. Safe because this job only runs post-merge on
+          # reviewed code — no PR code ever executes in this workflow.
+          persist-credentials: true
 
       - uses: actions/setup-node@v4
         with:
