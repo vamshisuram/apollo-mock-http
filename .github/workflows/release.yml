@@ -1,0 +1,65 @@
+# Release: publish to npm via semantic-release, on push to main only.
+#
+# SECURITY: There is no long-lived npm credential anywhere in this repository.
+# Publishing uses npm trusted publishing: the job requests a short-lived OIDC
+# token from GitHub describing itself (repo, workflow, ref), and npm exchanges
+# it for a credential valid for minutes. npm verifies the request came from this
+# repository and this workflow file, which a stolen string cannot forge.
+#
+# This closes the poisoned-pipeline-execution hole from the old CircleCI config,
+# where the PR build job ran untrusted code with NPM_TOKEN in its environment.
+# There is now no token to steal, and this workflow triggers only on `push` to
+# `main` — post-merge, reviewed code. PR code never runs here.
+#
+# NOTE: the workflow FILENAME is part of the trusted publisher identity
+# registered on npm. Renaming this file breaks publishing until the npm-side
+# configuration is updated to match.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write       # create git tags + GitHub releases
+  issues: write         # semantic-release comments on released issues
+  pull-requests: write  # semantic-release comments on released PRs
+  id-token: write       # mint the OIDC token npm exchanges for publish rights
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # semantic-release needs full history + tags
+          # Credentials ARE persisted here, unlike the PR workflows: the
+          # @semantic-release/git plugin pushes the release commit (package.json
+          # + CHANGELOG.md) and tag back to main over git, which needs an
+          # authenticated remote. Safe because this job only runs post-merge on
+          # reviewed code — no PR code ever executes in this workflow.
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+
+      - name: Semantic Release
+        run: npx semantic-release
+        env:
+          # No NPM_TOKEN. @semantic-release/npm establishes an OIDC context
+          # first and only falls back to a token if that fails, so publishing
+          # here relies entirely on the trusted publisher configured on npm.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

@@ -1,10 +1,27 @@
 import { ApolloLink, Observable } from "apollo-link";
 
+/**
+ * Safely read mock data from localStorage.
+ * Guards against non-browser (SSR/Node) environments where `localStorage`
+ * is undefined, and against malformed JSON, returning `null` on any failure
+ * instead of throwing during link construction.
+ */
+const readMockDataFromLocalStorage = () => {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+  try {
+    const raw = localStorage.getItem("AMH_mockdata");
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
 export class MockLink extends ApolloLink {
   constructor(mockLinkConfig) {
     super();
-    const dataStringFromLocalStorage = localStorage.getItem("AMH_mockdata");
-    const mockDataFromLocalStorage = JSON.parse(dataStringFromLocalStorage);
+    const mockDataFromLocalStorage = readMockDataFromLocalStorage();
     const { enableMock, mockData, targetOperations, defaultAPICallDuration } =
       mockLinkConfig;
     this.config = {
@@ -23,7 +40,6 @@ export class MockLink extends ApolloLink {
     );
     if (enableMock && isOperationMocked) {
       return new Observable((observer) => {
-        console.log("In Mock Link ...");
         setTimeout(() => {
           const relatedMockdata = this.config.mockData[operation.operationName];
           observer.next(relatedMockdata);

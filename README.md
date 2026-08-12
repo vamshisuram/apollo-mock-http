@@ -2,8 +2,7 @@
 
 An easy and maintainable way of injecting mock data into Apollo GraphQL Client for fast feature development decoupled from API/Backend.
 
-[![CircleCI](https://circleci.com/gh/intuit/apollo-mock-http/tree/main.svg?style=shield)](https://circleci.com/gh/intuit/apollo-mock-http/tree/main)
-[![Coverage Status](https://coveralls.io/repos/github/intuit/apollo-mock-http/badge.svg?branch=main)](https://coveralls.io/github/intuit/apollo-mock-http?branch=master)
+[![CI](https://github.com/vamshisuram/apollo-mock-http/actions/workflows/ci.yml/badge.svg)](https://github.com/vamshisuram/apollo-mock-http/actions/workflows/ci.yml)
 ![NPM Version](https://img.shields.io/npm/v/apollo-mock-http)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 ![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange)

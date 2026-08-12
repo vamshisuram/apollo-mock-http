@@ -1,0 +1,51 @@
+# CI: build + test on every PR and on pushes to main.
+#
+# SECURITY: This workflow has NO access to publish secrets. It runs on the
+# `pull_request` event, so for fork PRs the GITHUB_TOKEN is read-only and no
+# repository secrets are exposed. Dependencies are installed with
+# `--ignore-scripts` so a malicious PR cannot run lifecycle scripts (preinstall/
+# postinstall) in CI. Publishing happens only in release.yml, on push to main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: this job only needs to read the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+
+      # --ignore-scripts blocks arbitrary lifecycle scripts from untrusted PRs.
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Run tests
+        run: yarn test --coverage
+
+      - name: Build
+        run: yarn build
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: ignore
