@@ -1,0 +1,37 @@
+# Danger: PR convention checks (title prefix, description, console.log, tests).
+#
+# SECURITY: Runs on `pull_request` (NOT pull_request_target), so it executes in
+# the PR's own context with only the automatically-scoped GITHUB_TOKEN. For fork
+# PRs that token is read-only, so Danger may be unable to post a comment back —
+# that is an intentional trade-off: we never expose write credentials or repo
+# secrets to untrusted PR code. Dependencies install with --ignore-scripts.
+name: Danger
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  danger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Run Danger
+        run: yarn danger ci
+        env:
+          # Built-in, automatically-scoped token only. No PAT, no secrets.
+          DANGER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}

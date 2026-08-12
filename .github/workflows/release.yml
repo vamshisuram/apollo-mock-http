@@ -1,0 +1,52 @@
+# Release: publish to npm via semantic-release, on push to main only.
+#
+# SECURITY: This is the ONLY workflow that holds NPM_TOKEN. It triggers on
+# `push` to `main`, which fires after a PR is merged — i.e. on trusted code that
+# already passed review and CI. PR code never runs here, so a malicious PR can
+# never reach the publish token (this closes the poisoned-pipeline-execution
+# hole from the old CircleCI config, where the PR build job ran with secrets).
+#
+# Packages are published with npm provenance (id-token: write) so consumers can
+# verify the build came from this repo + workflow.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write       # create git tags + GitHub releases
+  issues: write         # semantic-release comments on released issues
+  pull-requests: write  # semantic-release comments on released PRs
+  id-token: write       # npm provenance (OIDC)
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # semantic-release needs full history + tags
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+
+      - name: Semantic Release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
