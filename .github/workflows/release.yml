@@ -21,9 +21,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write       # create git tags + GitHub releases
-  issues: write         # semantic-release comments on released issues
-  pull-requests: write  # semantic-release comments on released PRs
+  contents: write       # create the git tag + GitHub release
   id-token: write       # mint the OIDC token npm exchanges for publish rights
 
 concurrency:
@@ -37,17 +35,19 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0          # semantic-release needs full history + tags
-          # Credentials ARE persisted here, unlike the PR workflows: the
-          # @semantic-release/git plugin pushes the release commit (package.json
-          # + CHANGELOG.md) and tag back to main over git, which needs an
-          # authenticated remote. Safe because this job only runs post-merge on
-          # reviewed code — no PR code ever executes in this workflow.
-          persist-credentials: true
+          # Nothing in the release pipeline pushes to git any more — the tag and
+          # release notes are created through the GitHub API. So this workflow
+          # needs no authenticated git remote either.
+          persist-credentials: false
 
+      # No registry-url. Setting it makes setup-node write an .npmrc containing
+      # `_authToken=${NODE_AUTH_TOKEN}` and point NPM_CONFIG_USERCONFIG at it.
+      # Yarn expands that variable during install and fails hard when it is
+      # unset — and it is unset by design, because publishing uses OIDC rather
+      # than a token. semantic-release defaults to the official registry.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
