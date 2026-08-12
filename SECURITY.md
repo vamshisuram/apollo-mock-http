@@ -17,7 +17,7 @@ This project publishes to npm, so the build pipeline is hardened against
   and install dependencies with `--ignore-scripts` so untrusted PR code cannot
   execute lifecycle scripts in CI.
 - **Publishing (`release.yml`)** runs **only** on `push` to `main` (post-merge,
-  reviewed code). `NPM_TOKEN` exists only in this workflow, so PR code can never
+  reviewed code). `NPM_PUBLISH_TOKEN` exists only in this workflow, so PR code can never
   reach it. Packages are published with npm **provenance**.
 - Dependencies are monitored by Dependabot.
 
@@ -37,7 +37,9 @@ via Dependabot rather than treated as release blockers.
 ## Recommended repository settings
 
 - Protect `main`: require PR review + passing `CI` check before merge.
-- Use a **granular, publish-only** npm automation token for `NPM_TOKEN`, scoped
-  to this package only.
+- Use a **publish-only** npm granular access token for the
+  `NPM_PUBLISH_TOKEN` secret, scoped to this package only. Do not set an IP
+  allowlist — GitHub-hosted runners have dynamic addresses. Granular tokens
+  require an expiry date, so note it: releases fail once it lapses.
 - In repo Settings → Actions, set "Fork pull request workflows" to require
   approval before running for first-time / outside contributors.
