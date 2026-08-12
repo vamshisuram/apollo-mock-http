@@ -1,5 +1,13 @@
 # Semantic Versioning Changelog
 
+## [1.4.3](https://github.com/vamshisuram/apollo-mock-http/compare/v1.4.2...v1.4.3) (2026-08-12)
+
+
+### Bug Fixes
+
+* allow semantic-release to push the release commit ([c5316b9](https://github.com/vamshisuram/apollo-mock-http/commit/c5316b9ffdda514a78038f829eff7cfb8097e0a5))
+* guard localStorage access and repair broken dangerfile ([7aaca00](https://github.com/vamshisuram/apollo-mock-http/commit/7aaca007b78adab0ea992ff1d8847723dcd357a4))
+
 # 1.0.0 (2026-08-12)
 
 
