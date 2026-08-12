@@ -218,4 +218,67 @@ describe("MockLink Overall", () => {
     expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), 3000);
     expect(localStorageSpy).toHaveBeenCalledWith("AMH_mockdata");
   });
+
+  it("Should not throw when localStorage is unavailable (SSR/Node)", () => {
+    delete global.localStorage;
+
+    const mockData = {
+      getCompanyName: {
+        data: { name: "Test", __typename: "String" },
+        errors: null,
+      },
+    };
+    const links = [{ name: "httpLink", link: new ApolloLink() }];
+
+    expect(() =>
+      mocker.injectMock({
+        links,
+        enableMock: true,
+        targetOperations: ["getCompanyName"],
+        mockData,
+        createCustomLinkObj: null,
+        defaultAPICallDuration: 2000,
+      })
+    ).not.toThrow();
+
+    expect(links.length).toBe(2);
+    expect(links[0].constructor).toBe(mocker.MockLink);
+    expect(links[0].config.mockData).toBe(mockData);
+  });
+
+  it("Should fall back to explicit mockData when localStorage holds malformed JSON", () => {
+    jest.useFakeTimers();
+    localStorageSpy.mockReturnValue("{ this is not valid json");
+
+    const mockData = {
+      getCompanyName: {
+        data: { name: "Test", __typename: "String" },
+        errors: null,
+      },
+    };
+    const links = [{ name: "httpLink", link: new ApolloLink() }];
+
+    expect(() =>
+      mocker.injectMock({
+        links,
+        enableMock: true,
+        targetOperations: ["getCompanyName"],
+        mockData,
+        createCustomLinkObj: null,
+        defaultAPICallDuration: 2000,
+      })
+    ).not.toThrow();
+
+    // The malformed entry is discarded rather than propagated, so the link
+    // still serves the explicitly-passed mock data.
+    const forwardSpy = jest.fn();
+    const op = { operationName: "getCompanyName" };
+    const observableObj = links[0].request(op, forwardSpy);
+    const fakeObserver = { next: jest.fn(), complete: jest.fn() };
+    observableObj.subscribe(fakeObserver);
+    jest.runAllTimers();
+
+    expect(fakeObserver.next).toHaveBeenCalledWith(mockData.getCompanyName);
+    expect(forwardSpy).not.toHaveBeenCalledWith(op);
+  });
 });

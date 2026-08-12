@@ -25,8 +25,16 @@ const modifiedFiles = danger.git.modified_files.filter(path =>
   path.endsWith('js')
 );
 
-// Check for console.log statements
-modifiedFiles.forEach(file => {
+// Check for console.log statements.
+//
+// This file is excluded from its own scan: the check below contains the literal
+// string it searches for, so including it would fail every PR that touches the
+// dangerfile, regardless of whether a stray log was actually left behind.
+const filesToScanForConsole = modifiedFiles.filter(
+  file => path.basename(file) !== 'dangerfile.js'
+);
+
+filesToScanForConsole.forEach(file => {
   const content = fs.readFileSync(file).toString();
   if (content.includes('console.log') || content.includes('console.warn')) {
     fail(`a \`console.log\` was left in file (${file})`);
