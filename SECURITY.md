@@ -55,7 +55,14 @@ via Dependabot rather than treated as release blockers.
 - Protect `main`: require PR review + passing `CI` check before merge.
 - On npm, configure the package's **trusted publisher**: GitHub Actions,
   repository `vamshisuram/apollo-mock-http`, workflow `release.yml`. This must
-  be in place before the first release run.
+  be in place before the first release run. Grant it `npm publish` only —
+  semantic-release does not use staged publishing.
+- Set the package's publishing access to **"Require two-factor authentication
+  and disallow bypass 2fa tokens"**. Trusted publishers keep working under this
+  setting, so CI is unaffected, and it makes the permissive token path
+  unavailable rather than merely unused. Note this deliberately removes the
+  token fallback: if OIDC publishing ever breaks, recovery is a manual publish
+  with 2FA, or temporarily relaxing this setting.
 - Keep account-level 2FA enabled. It protects the things that outlast any single
   release: minting tokens, adding maintainers, transferring the package.
 - Avoid reintroducing a long-lived npm token. If one is ever needed as a
