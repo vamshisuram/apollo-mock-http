@@ -19,8 +19,20 @@ This project publishes to npm, so the build pipeline is hardened against
 - **Publishing (`release.yml`)** runs **only** on `push` to `main` (post-merge,
   reviewed code). `NPM_TOKEN` exists only in this workflow, so PR code can never
   reach it. Packages are published with npm **provenance**.
-- Dependencies are monitored by Dependabot; `yarn audit` is expected to report
-  zero vulnerabilities.
+- Dependencies are monitored by Dependabot.
+
+### Dependency audit scope
+
+The published package has a single runtime dependency (`apollo-link`).
+`yarn audit --groups dependencies` reports **0 vulnerabilities**, and that is
+the number that matters to consumers — it is what actually ships in `dist/`.
+
+A bare `yarn audit` reports a large number, but every finding is in the build
+and test toolchain (jest, rollup, danger, semantic-release), which never reaches
+consumers. Yarn v1 also counts each dependency *path* separately, so a single
+advisory deep in the jest tree is reported dozens of times; the count badly
+overstates the number of distinct issues. Dev-tooling advisories are addressed
+via Dependabot rather than treated as release blockers.
 
 ## Recommended repository settings
 
